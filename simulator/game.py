@@ -8,7 +8,7 @@ STAT_FONT = pygame.font.SysFont("comicsans", 25)
 
 WIDTH = 800
 HEIGHT = 600
-FPS = 50
+FPS = 30
 
 def draw_window(pygame, screen, drone_list):
     screen.fill((0,0,0))
@@ -21,7 +21,7 @@ def draw_window(pygame, screen, drone_list):
         text = STAT_FONT.render(str(mouse_coords), 1, (255,255,255))
         screen.blit(text, (WIDTH-80, 10))
 
-        active_relays = [drone for drone in drone_list if drone.type == 'relay' and drone.state != "OFFLINE"]
+        active_relays = [drone for drone in drone_list if drone.type == "relay" and drone.state != "OFFLINE" and drone.coords != drone.initial_coords]
         text = STAT_FONT.render('nº drones relay: ' + str(len(active_relays)), 1, (255,255,255))
         screen.blit(text, (10, 10))
 

@@ -12,7 +12,7 @@ class Node:
 
     def apply_heuristics(self, closest):
         self.distance_to_goal = closest
-        self.heuristic = self.depth + self.distance_to_goal
+        self.heuristic = self.depth# + self.distance_to_goal*0.1
 
     def __eq__(self, other):
         return (self.position, self.parent, self.depth) == (other.position, other.parent, other.depth)
@@ -43,6 +43,18 @@ def astar_get_path(start, goals, poi):
     open_nodes.put((0, start_node))
     closed.add(start_node)
 
+    
+    # get closest drones for performance reasons
+    closest_drones = dict()
+    poi_extended = poi+list_goal_coords
+    for p1 in poi_extended:
+        aux_list = set()
+        for p2 in poi_extended:
+            if p1 != p2 and coords_distance(p1, p2) <= Drone.MAX_RADIUS_CONNECTION: aux_list.add(p2)
+        closest_drones[p1] = aux_list
+    
+        
+    # start search
     while not open_nodes.empty():
         current_node = open_nodes.get()[1]
         # found solution
@@ -54,7 +66,7 @@ def astar_get_path(start, goals, poi):
             return path
 
         # searching neighbor drones
-        neighbor_drones = [drone for drone in poi+list_goal_coords if coords_distance(current_node.position, drone) < Drone.MAX_RADIUS_CONNECTION]
+        neighbor_drones = closest_drones[current_node.position]
         closest = min([coords_distance(current_node.position, goal) for goal in goals_coords])
         for neighbor_drone in neighbor_drones:
             neighbor = Node(neighbor_drone, current_node, current_node.depth + 1)
@@ -65,9 +77,8 @@ def astar_get_path(start, goals, poi):
         closed.add(current_node)
     return None
 
-
-
 def drone_directions(relay_drones, relays_needed):
+    '''
     all_combinations = [list(zip(each_permutation, relays_needed)) for each_permutation in itertools.permutations(relay_drones, len(relays_needed))]
     if len(all_combinations) == 0: return None
     combination = all_combinations[0]
@@ -78,7 +89,12 @@ def drone_directions(relay_drones, relays_needed):
             shortest = distance
             combination = c
     
+    
     # comply with drone directions interface
     drones_movement = dict()
     for c in combination: drones_movement[c[0]] = c[1]    
     return drones_movement
+    '''
+    r = dict()
+    for i in range(len(relays_needed)): r[relay_drones[i]] = relays_needed[i]
+    return r

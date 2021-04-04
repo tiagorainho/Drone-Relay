@@ -5,13 +5,14 @@ from models.Sensors import Wifi
 import math
 
 class Drone:
-    Kp = 0.015      # quao longe estamos do destino
+    Kp = 0.03      # quao longe estamos do destino
     Ki = 0.0001     # aproximar do valor verdaeiro
     Kd = 0.004      # compensar o overshoot do p
 
     DRONE_SAMPLE_TIME = 0.008
-    ERROR_THRESHOLD = 2
+    ERROR_THRESHOLD = 5
     MAX_RADIUS_CONNECTION = 50
+    RADIUS_CONNECTION_THRESHOLD = 30
 
     def __init__(self, coords, drone_type=None):
         self.initial_coords = coords
@@ -35,8 +36,6 @@ class Drone:
         elif func == 'returnBase':
             self.startTask(self.moveTo, self.initial_coords)
             self.state == "OFFLINE"
-            #self.startTask(self.moveTo, (self.initial_coords[0], self.initial_coords[1], 0))
-
 
     def startTask(self, func, args):
         if self.task != None:
@@ -46,13 +45,14 @@ class Drone:
         self.task.start()
 
     def moveTo(self, x, y, z):
-        self.pid_x.setpoint = x
-        self.pid_y.setpoint = y
-        self.pid_z.setpoint = z
+        self.pid_x.setpoint, self.pid_y.setpoint, self.pid_z.setpoint = (x,y,z)
         while(not self.task.exited()):
             len_x, len_y, len_z = (self.pid_x(self.x), self.pid_y(self.y), self.pid_z(self.z))
             size = math.sqrt(len_x**2 + len_y**2 + len_z**2)
-            if size == 0: break
+            if size == 0:
+                self.x, self.y, self.z = (x, y, z)
+                self.task = None
+                break
             self.x += len_x/size
             self.y += len_y/size
             self.z += len_z/size
