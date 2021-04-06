@@ -3,13 +3,14 @@ from models.Utils import *
 from models.Search import astar_drone_relay_paths, drone_directions, DronesState
 from models.Drone import Drone
 
-NUM_DRONES = 10
-NUM_RELAY_DRONES = 30
+NUM_DRONES = 15
+NUM_RELAY_DRONES = 60
 
 def initialize_mission(drones):
     # drone 0 is the ground station
     drones[0].is_access_point = True
-    #drones[1].is_access_point = True
+    drones[2].is_access_point = True
+    drones[6].is_access_point = True
 
 def load_mission(drones):
     
@@ -61,6 +62,16 @@ def load_mission(drones):
     drones[9].addTask("moveTo", (220, 100, 10))
     drones[9].connectedTo(drones[0])
     
+    drones[10].addTask("moveTo", (200, 50, 10))
+
+    drones[11].addTask("moveTo", (120, 220, 10))
+
+    drones[12].addTask("moveTo", (240, 30, 10))
+
+    drones[13].addTask("moveTo", (320, 550, 10))
+
+    drones[14].addTask("moveTo", (390, 440, 10))
+    
     #
 
 
@@ -95,13 +106,11 @@ def relay(mission_drones, relay_drones):
         start_state = DronesState(drones_connection, connected_coords, drone_to_coords)
         drones_state = astar_drone_relay_paths(start_state, poi)
 
-
-
         if drones_state is not None:
             relays_needed = list(drones_state.drones_relay)
             
             # optimize relays needed
-            relays_needed = optimize_relays(relays_needed, [mission_drone.coords for mission_drone in mission_drones])
+            relays_needed = optimize_relays(relays_needed, [coord for coord in drone_to_coords.values()])
 
             # change drone relay positions
             drones_movement = drone_directions(relay_drones, relays_needed)
@@ -111,14 +120,11 @@ def relay(mission_drones, relay_drones):
                 for drone in relay_drones:
                     if drone not in drones_movement and drone.state == "ARMED":
                         drone.addTask("returnBase")
-                        
+
             print("update counter: " + str(update_counter) + "; time: " + str(time()-start_time) + " seconds")
         else:
             print("falhou counter: " + str(update_counter) + "; time: " + str(time()-start_time) + " seconds")
-
-        
         update_counter += 1
-        
 
         sleep(0.05)
 

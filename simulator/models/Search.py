@@ -13,7 +13,7 @@ class Node:
         self.heuristic = self.state.heuristic
 
     def __eq__(self, other):
-        return hash(self.state) == hash(other.state)
+        return self.state == other.state
 
     def __lt__(self, other):
         return self.heuristic < other.heuristic
@@ -50,7 +50,7 @@ class DronesState:
     @property
     def mission_drone_coords(self):
         return list(self._mission_drones_coords)
-    
+
     @property
     def heuristic(self):
         #return len(self.drones_relay)
@@ -63,8 +63,19 @@ class DronesState:
                 distance_aux = coords_distance(last_poi, connected_coord)
                 if min_distance > distance_aux: min_distance = distance_aux
             distance += min_distance
-        return distance# * 0.77 + len(self.drones_relay)*2.13
+        return distance
         
+    def closest_connected_coord(self, drone):
+        connected_coord = next(iter(self._connected_coords))
+        drone_coords = self._drone_to_coords[drone]
+        distance_connected_coord = coords_distance(drone_coords, connected_coord)
+        
+        for cc in self._connected_coords:
+            distance = coords_distance(drone_coords, cc)
+            if distance < distance_connected_coord:
+                connected_coord = cc
+                distance_connected_coord = distance
+        return (connected_coord, distance_connected_coord)
     
     def last_poi(self, drone):
         drone_relays = self.get_relays(drone)
@@ -95,12 +106,14 @@ class DronesState:
     def __str__(self):
         return str(self._drones_connection)
     
+    def __eq__(self, other):
+        return self._drones_connection == other._drones_connection and self._connected_coords == other._connected_coords
+    
     def deepcopy(self):
         return DronesState({key: value[:] for key, value in self._drones_connection.items()}, {value for value in self._connected_coords}, self._drone_to_coords)
 
 
 def astar_drone_relay_paths(drones_state: DronesState,  poi):
-
     # get closest drones for performance reasons
     poi_extended = poi+[coord for coord in drones_state.mission_drone_coords]
     closest_poi = dict()
@@ -115,11 +128,11 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
     open_nodes = PriorityQueue()
     start_node = Node(drones_state, None, 0)
     open_nodes.put((0, start_node))
+    closed_nodes.add(start_node)
 
     while not open_nodes.empty():
         current_node = open_nodes.get()[1]
         # found solution
-        
         if current_node.state.completed(): return current_node.state
         
         # expand new nodes
@@ -131,9 +144,8 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
                 new_node = Node(current_node.state.deepcopy(), current_node, current_node.depth + 1)
                 new_node.state.connect_to(drone, point)
                 new_node.apply_heuristics()
-                #print(new_node)
-                #if new_node not in closed_nodes:
-                open_nodes.put((new_node.heuristic, new_node))
+                if new_node not in closed_nodes:
+                    open_nodes.put((new_node.heuristic, new_node))
         closed_nodes.add(current_node)
     return None
 
