@@ -64,6 +64,11 @@ class DronesState:
                 if min_distance > distance_aux: min_distance = distance_aux
             distance += min_distance
         return distance
+    
+    def update_state(self, drones_changed, drone_to_coords):
+        for drone in self._drones_connection:
+            pass
+
         
     def closest_connected_coord(self, drone):
         connected_coord = next(iter(self._connected_coords))

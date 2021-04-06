@@ -1,6 +1,6 @@
 import pygame
 from models.Drone import Drone
-from models.GroundBase import load_mission, relay, initialize_mission, NUM_DRONES, NUM_RELAY_DRONES
+from models.GroundBase import load_mission, relay, NUM_DRONES, NUM_RELAY_DRONES
 import threading
 
 pygame.font.init()
@@ -36,9 +36,6 @@ def main():
     # create drones
     drone_list = [Drone((WIDTH/2, HEIGHT/2, 0)) for _ in range(NUM_DRONES)]
     relay_list = [Drone((WIDTH/2, HEIGHT/2, 0), "relay") for _ in range(NUM_RELAY_DRONES)]
-
-    # add init
-    initialize_mission(drone_list)
 
     # add missions
     missions = threading.Thread(target=load_mission, args=(drone_list,), daemon=True)
