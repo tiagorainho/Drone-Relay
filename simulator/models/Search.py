@@ -53,17 +53,17 @@ class DronesState:
     
     @property
     def heuristic(self):
-        #return len([drone for drone in self.drones_relay])
+        #return len(self.drones_relay)
         distance = 0
         for drone in self.mission_drones:
             last_poi = self.last_poi(drone)
             
-            min_distance = 100000000000#coords_distance(last_poi, next(iter(self._connected_coords)))
+            min_distance = coords_distance(last_poi, next(iter(self._connected_coords)))
             for connected_coord in self._connected_coords:
                 distance_aux = coords_distance(last_poi, connected_coord)
                 if min_distance > distance_aux: min_distance = distance_aux
             distance += min_distance
-        return distance# * 0.7 + len([drone for drone in self.drones_relay])
+        return distance# * 0.77 + len(self.drones_relay)*2.13
         
     
     def last_poi(self, drone):
@@ -99,7 +99,7 @@ class DronesState:
         return DronesState({key: value[:] for key, value in self._drones_connection.items()}, {value for value in self._connected_coords}, self._drone_to_coords)
 
 
-def drone_relay_paths(drones_state: DronesState,  poi):
+def astar_drone_relay_paths(drones_state: DronesState,  poi):
 
     # get closest drones for performance reasons
     poi_extended = poi+[coord for coord in drones_state.mission_drone_coords]
@@ -107,7 +107,7 @@ def drone_relay_paths(drones_state: DronesState,  poi):
     for p1 in poi_extended:
         aux_list = []
         for p2 in poi_extended:
-            if p1 != p2 and coords_distance(p1, p2) <= Drone.MAX_RADIUS_CONNECTION: aux_list.append(p2)
+            if p1 != p2 and coords_distance(p1, p2) <= Drone.RADIUS_CONNECTION_THRESHOLD: aux_list.append(p2)
         closest_poi[p1] = aux_list
     
     # prepare for start astar search
