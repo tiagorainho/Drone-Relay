@@ -58,13 +58,6 @@ class DronesState:
 
     @property
     def heuristic(self):
-        '''
-        for drone_coord in self._mission_drones_coords:
-            if drone_coord in self._connected_coords:
-
-        return 1
-        '''
-        #return len(self.drones_relay)
         distance = 0
         for drone in self.mission_drones:
             last_poi = self.last_poi(drone)
@@ -74,9 +67,12 @@ class DronesState:
                 distance_aux = coords_distance(last_poi, connected_coord)
                 if min_distance > distance_aux: min_distance = distance_aux
             distance += min_distance
-        return self._previous_distance + distance
+        return distance# + self._previous_distance + len(self.drones_relay)*5
 
     def update_state(self, drones_changed, drone_to_coords):
+
+        # do this for performance increase
+
         for drone in self._drones_connection:
             pass
 
@@ -110,8 +106,8 @@ class DronesState:
     
     def connect_to(self, mission_drone, coord_to_connect):
         # add new relay drone
-        self._drones_connection[mission_drone].append(coord_to_connect)
         self._previous_distance += coords_distance(self.last_poi(mission_drone), coord_to_connect)
+        self._drones_connection[mission_drone].append(coord_to_connect)        
         if coord_to_connect in self._connected_coords:
             # connect both the drone and the relay drones to the network
             self._connected_coords.add(self._drone_to_coords[mission_drone])
