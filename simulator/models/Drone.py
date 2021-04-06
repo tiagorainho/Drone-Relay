@@ -5,14 +5,15 @@ from models.Sensors import Wifi
 import math
 
 class Drone:
-    Kp = 0.03      # quao longe estamos do destino
+    Kp = 0.04      # quao longe estamos do destino
     Ki = 0.0001     # aproximar do valor verdaeiro
     Kd = 0.004      # compensar o overshoot do p
 
     DRONE_SAMPLE_TIME = 0.008
     ERROR_THRESHOLD = 5
     MAX_RADIUS_CONNECTION = 50
-    RADIUS_CONNECTION_THRESHOLD = 30
+    RADIUS_CONNECTION_THRESHOLD = 40
+    OPTIMAL_DISTANCE_CONNECTION = 25
 
     def __init__(self, coords, drone_type=None):
         self.initial_coords = coords
