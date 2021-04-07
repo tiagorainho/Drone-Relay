@@ -28,9 +28,13 @@ class DronesState:
     def __init__(self, drones_connection, connected_coords, drone_to_coords):
         self._drones_connection = drones_connection # dict of mission_drone and list of coords
         self._connected_coords = connected_coords # set of connected coords
-        self._drone_to_coords = drone_to_coords#{drone: drone.coords for drone in self.mission_drones}
+        self._drone_to_coords = drone_to_coords
         self._mission_drones_coords = frozenset(coord for coord in list(self._drone_to_coords.values()))
         self._previous_distance = 0
+
+    @property
+    def connected_coords(self):
+        return self._connected_coords
 
     @property
     def drones_connection(self):
@@ -59,6 +63,7 @@ class DronesState:
     @property
     def heuristic(self):
         distance = 0
+        '''
         for drone in self.mission_drones:
             last_poi = self.last_poi(drone)
             
@@ -67,7 +72,15 @@ class DronesState:
                 distance_aux = coords_distance(last_poi, connected_coord)
                 if min_distance > distance_aux: min_distance = distance_aux
             distance += min_distance
-        return distance# + self._previous_distance + len(self.drones_relay)*5
+        '''
+        not_connected_drones_coord = [self._drone_to_coords[drone] for drone in self.mission_drones if self._drone_to_coords[drone] not in self.connected_coords]
+        for not_connected_coord in not_connected_drones_coord:
+            min_distance = coords_distance(not_connected_coord, next(iter(self._connected_coords)))
+            for connected_coord in self._connected_coords:
+                distance_aux = coords_distance(not_connected_coord, connected_coord)
+                if min_distance > distance_aux: min_distance = distance_aux
+            distance += min_distance*10
+        return distance + len(self._connected_coords)*0.5
 
     def update_state(self, drones_changed, drone_to_coords):
 
@@ -107,7 +120,7 @@ class DronesState:
     def connect_to(self, mission_drone, coord_to_connect):
         # add new relay drone
         self._previous_distance += coords_distance(self.last_poi(mission_drone), coord_to_connect)
-        self._drones_connection[mission_drone].append(coord_to_connect)        
+        self._drones_connection[mission_drone].append(coord_to_connect)
         if coord_to_connect in self._connected_coords:
             # connect both the drone and the relay drones to the network
             self._connected_coords.add(self._drone_to_coords[mission_drone])
@@ -133,7 +146,8 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
     for p1 in poi_extended:
         aux_list = []
         for p2 in poi_extended:
-            if p1 != p2 and coords_distance(p1, p2) <= Drone.RADIUS_CONNECTION_THRESHOLD: aux_list.append(p2)
+            distance = coords_distance(p1, p2)
+            if p1 != p2 and distance <= Drone.RADIUS_CONNECTION_THRESHOLD and distance > 5: aux_list.append(p2)
         closest_poi[p1] = aux_list
     
     # prepare for start astar search
@@ -149,8 +163,20 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
         if current_node.state.completed(): return current_node.state
         
         # expand new nodes
-        mission_drones = [drone for drone in current_node.state.mission_drones if not drone.is_access_point]
-        for drone in mission_drones:
+        #connected_drones_coords = [current_node.state.get_drone_coords(drone) for drone in current_node.state.mission_drones]
+        for connected_coord in current_node.state.connected_coords:
+            for coord in closest_poi[connected_coord]:
+                if coord in current_node.state.connected_coords: continue
+                new_node = Node(current_node.state.deepcopy(), current_node, current_node.depth + 1)
+                #new_node.state.connect_to(drone, point)
+                new_node.state._connected_coords.add(coord)
+                new_node.state._previous_distance += coords_distance(coord, connected_coord)
+                new_node.apply_heuristics()
+                if new_node not in closed_nodes:
+                    open_nodes.put((new_node.heuristic, new_node))
+
+            
+            '''
             last_poi  = current_node.state.last_poi(drone)
             for point in closest_poi[last_poi]:
                 if point in current_node.state.get_relays(drone): continue
@@ -159,6 +185,7 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
                 new_node.apply_heuristics()
                 if new_node not in closed_nodes:
                     open_nodes.put((new_node.heuristic, new_node))
+            '''
         closed_nodes.add(current_node)
     return None
 

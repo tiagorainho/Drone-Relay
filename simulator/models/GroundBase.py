@@ -8,15 +8,19 @@ NUM_RELAY_DRONES = 60
 
 def load_mission(drones):
     # drone 0 is the ground station
-    drones[0].is_access_point = True
+    drones[0].state = "ARMED"
+    #drones[0].is_access_point = True
     #drones[2].is_access_point = True
     #drones[6].is_access_point = True
+    drones[12].is_access_point = True
     
     drones[1].addTask("moveTo", (250, 300, 10))
     drones[1].connectedTo(drones[0])
     
     sleep(3)
     drones[1].addTask("moveTo", (400, 370, 10))
+
+    sleep(1)
     drones[1].addTask("moveTo", (450, 400, 10))
     
     drones[2].addTask("moveTo", (280, 350, 10))
@@ -121,10 +125,14 @@ def relay(mission_drones, relay_drones):
 
         drones_state = astar_drone_relay_paths(start_state, poi)
 
+
+
         
 
         if drones_state is not None:
-            relays_needed = list(drones_state.drones_relay)
+            #relays_needed = list(drones_state.drones_relay)
+
+            relays_needed = list(drones_state.connected_coords - set([drone for drone in drone_to_coords.values()]))
             
             # optimize relays needed
             relays_needed = optimize_relays(relays_needed, [coord for coord in drone_to_coords.values()])
