@@ -8,19 +8,19 @@ NUM_RELAY_DRONES = 60
 
 def load_mission(drones):
     # drone 0 is the ground station
-    drones[0].state = "ARMED"
-    #drones[0].is_access_point = True
-    #drones[2].is_access_point = True
-    #drones[6].is_access_point = True
+    #drones[0].state == "ARMED"
+    drones[0].is_access_point = True
+    drones[2].is_access_point = True
+    drones[6].is_access_point = True
     drones[12].is_access_point = True
     
+    #drones[0].addTask("moveTo", (270, 310, 10))
+
     drones[1].addTask("moveTo", (250, 300, 10))
     drones[1].connectedTo(drones[0])
     
     sleep(3)
     drones[1].addTask("moveTo", (400, 370, 10))
-
-    sleep(1)
     drones[1].addTask("moveTo", (450, 400, 10))
     
     drones[2].addTask("moveTo", (280, 350, 10))
@@ -41,7 +41,7 @@ def load_mission(drones):
     sleep(4)
     drones[1].addTask("moveTo", (400, 390, 10))
     drones[3].addTask("moveTo", (200, 400, 10))
-
+    
     # extended testing
     
     drones[4].addTask("moveTo", (270, 330, 10))
@@ -86,7 +86,7 @@ def relay(mission_drones, relay_drones):
     refresh_state = True
 
     while(True):
-
+        # update current drone to coords registry
         changed_drones = set()
         for drone in mission_drones:
             if drone not in drone_to_coords or drone.coords != drone_to_coords[drone]:
@@ -99,15 +99,12 @@ def relay(mission_drones, relay_drones):
 
         print("...")
         start_time = time()
-        
-        # get current coords
-        #drone_to_coords = {drone: drone.coords for drone in mission_drones}
 
         # get current access points
         gs = [drone for drone in mission_drones if drone.is_access_point]
 
         # get points of interess
-        poi = get_poi([mission_drone for mission_drone in mission_drones if mission_drone.state != "OFFLINE" or mission_drone.is_access_point], gs, drone_to_coords)
+        #poi = get_poi([mission_drone for mission_drone in mission_drones if mission_drone.state != "OFFLINE" or mission_drone.is_access_point], gs, drone_to_coords)
         
         '''
         if refresh_state:
@@ -123,23 +120,20 @@ def relay(mission_drones, relay_drones):
         connected_coords = {coords for drone, coords in drone_to_coords.items() if drone.is_access_point}
         start_state = DronesState(drones_connection, connected_coords, drone_to_coords)
 
-        drones_state = astar_drone_relay_paths(start_state, poi)
-
-
-
+        # get points of interess
+        poi = get_poi([drone for drone in drones_connection.keys() if drone.state != "OFFLINE" or drone.is_access_point], gs, drone_to_coords)
         
 
-        if drones_state is not None:
-            #relays_needed = list(drones_state.drones_relay)
+        drones_state = astar_drone_relay_paths(start_state, poi)        
 
-            relays_needed = list(drones_state.connected_coords - set([drone for drone in drone_to_coords.values()]))
+        if drones_state is not None:
+            relays_needed = list(drones_state.drones_relay)
             
             # optimize relays needed
             relays_needed = optimize_relays(relays_needed, [coord for coord in drone_to_coords.values()])
 
             # change drone relay positions
             drones_movement = drone_directions(relay_drones, relays_needed)
-            #print(drones_movement)
             if drones_movement is not None:
                 for drone, coord in drones_movement.items(): drone.addTask("moveTo", coord)
                 for drone in relay_drones:
@@ -150,8 +144,6 @@ def relay(mission_drones, relay_drones):
         else:
             print("falhou counter: " + str(update_counter) + "; time: " + str(time()-start_time) + " seconds")
         update_counter += 1
-
-        sleep(0.05)
 
 def get_poi(drones, ground_stations, drone_to_coords):
     # points leading to closest ground station or blob of drones

@@ -87,4 +87,4 @@ class Drone:
         return math.sqrt((self.x-drone.x)**2 + (self.y-drone.y)**2 + (self.z-drone.z)**2)
 
     def __str__(self):
-        return str(self.coords)
+        return "Drone: " + str(self.coords)
