@@ -1,7 +1,6 @@
 from queue import PriorityQueue
 from models.Drone import *
 from models.Utils import coords_distance
-import itertools
 
 class Node:
     def __init__(self, state, parent, depth):
@@ -69,7 +68,6 @@ class DronesState:
 
     @property
     def heuristic(self):
-        #return len(self.drones_relay)
         distance = 0
         for drone in self.mission_drones:
             last_poi = self.last_poi(drone)
@@ -78,8 +76,8 @@ class DronesState:
             for connected_coord in self._connected_coords:
                 distance_aux = coords_distance(last_poi, connected_coord)
                 if min_distance > distance_aux: min_distance = distance_aux
-            distance += min_distance * 10
-        return distance# + self._previous_distance*0.5 + len(self.drones_relay)
+            distance += min_distance
+        return distance + self._previous_distance + len(self.drones_relay)
 
     def update_state(self, drones_changed, drone_to_coords):
 
@@ -181,7 +179,7 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
         aux_list = []
         for p2 in poi_extended:
             distance = coords_distance(p1, p2)
-            if p1 != p2 and distance <= Drone.RADIUS_CONNECTION_THRESHOLD and distance >= 5: aux_list.append(p2)
+            if p1 != p2 and distance <= Drone.RADIUS_CONNECTION_THRESHOLD: aux_list.append(p2)
         closest_poi[p1] = aux_list
     
     # prepare for start astar search

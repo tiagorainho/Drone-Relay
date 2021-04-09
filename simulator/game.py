@@ -10,6 +10,9 @@ WIDTH = 800
 HEIGHT = 600
 FPS = 30
 
+
+shared_coords = set()
+
 def draw_window(pygame, screen, drone_list):
     screen.fill((0,0,0))
     for drone in drone_list:
@@ -24,6 +27,10 @@ def draw_window(pygame, screen, drone_list):
         active_relays = [drone for drone in drone_list if drone.type == "relay" and drone.state != "OFFLINE" and drone.coords != drone.initial_coords]
         text = STAT_FONT.render('nº drones relay: ' + str(len(active_relays)), 1, (255,255,255))
         screen.blit(text, (10, 10))
+
+        # show points of interess
+        for coord in shared_coords:
+            pygame.draw.circle(screen, (255,0,0), (coord[0], coord[1]), 1)
 
     pygame.display.update()
 
@@ -42,7 +49,7 @@ def main():
     missions.start()
 
     # activate relay
-    relay_algorithm = threading.Thread(target=relay, args=(drone_list, relay_list), daemon=True)
+    relay_algorithm = threading.Thread(target=relay, args=(drone_list, relay_list, shared_coords), daemon=True)
     relay_algorithm.start()
 
     # run simulation

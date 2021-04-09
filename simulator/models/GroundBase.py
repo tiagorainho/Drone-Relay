@@ -3,18 +3,20 @@ from models.Utils import *
 from models.Search import astar_drone_relay_paths, drone_directions, DronesState
 from models.Drone import Drone
 
-NUM_DRONES = 15
+NUM_DRONES = 16
 NUM_RELAY_DRONES = 60
 
 def load_mission(drones):
     # drone 0 is the ground station
-    #drones[0].state == "ARMED"
-    drones[0].is_access_point = True
-    drones[2].is_access_point = True
-    drones[6].is_access_point = True
+    #drones[0].is_access_point = True
+    #drones[15].is_access_point = True
+    #drones[2].is_access_point = True
+    #drones[6].is_access_point = True
     drones[12].is_access_point = True
     
     #drones[0].addTask("moveTo", (270, 310, 10))
+
+    #drones[12].addTask("moveTo", (500, 300, 10))
 
     drones[1].addTask("moveTo", (250, 300, 10))
     drones[1].connectedTo(drones[0])
@@ -68,8 +70,8 @@ def load_mission(drones):
 
     drones[11].addTask("moveTo", (120, 220, 10))
 
-    sleep(1)
-    drones[12].addTask("moveTo", (240, 30, 10))
+    #drones[12].state == "ARMED"
+    #drones[12].addTask("moveTo", (240, 30, 10))
 
     sleep(1)
     drones[13].addTask("moveTo", (320, 550, 10))
@@ -79,7 +81,7 @@ def load_mission(drones):
     #
 
 
-def relay(mission_drones, relay_drones):
+def relay(mission_drones, relay_drones, shared_coords):
 
     drone_to_coords = dict()
     update_counter = 0
@@ -117,12 +119,20 @@ def relay(mission_drones, relay_drones):
             start_state = start_state.update_state(changed_drones, drone_to_coords)
         '''
         drones_connection = {drone: [] for drone in mission_drones if drone.state != "OFFLINE" or drone.is_access_point}
-        connected_coords = {coords for drone, coords in drone_to_coords.items() if drone.is_access_point}
+        connected_coords = {drone_to_coords[drone] for drone in gs}
+        #connected_coords = {coords for drone, coords in drone_to_coords.items() if drone.is_access_point}
         start_state = DronesState(drones_connection, connected_coords, drone_to_coords)
 
         # get points of interess
         poi = get_poi([drone for drone in drones_connection.keys() if drone.state != "OFFLINE" or drone.is_access_point], gs, drone_to_coords)
         
+        #
+        for _ in range(len(shared_coords)):
+            shared_coords.pop()
+
+        for coord in poi:
+            shared_coords.add(coord)
+        #
 
         drones_state = astar_drone_relay_paths(start_state, poi)        
 
