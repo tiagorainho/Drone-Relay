@@ -110,9 +110,11 @@ class DronesState:
         return self._drone_to_coords[drone]
 
     def completed(self):
+        #for drone in self.mission_drones:
+        #    coords = self.get_drone_coords(drone)
         for coords in self._mission_drones_coords:
             if coords not in self._connected_coords: return False
-        return True
+        return True        
     
     def connect_to(self, mission_drone, coord_to_connect):
         # add new relay drone
@@ -179,7 +181,7 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
         aux_list = []
         for p2 in poi_extended:
             distance = coords_distance(p1, p2)
-            if p1 != p2 and distance <= Drone.RADIUS_CONNECTION_THRESHOLD: aux_list.append(p2)
+            if p1 != p2 and distance <= Drone.RADIUS_CONNECTION_THRESHOLD and distance >= 10: aux_list.append(p2)
         closest_poi[p1] = aux_list
     
     # prepare for start astar search
@@ -191,11 +193,17 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
 
     while not open_nodes.empty():
         current_node = open_nodes.get()[1]
-        # found solution
-        if current_node.state.completed(): return current_node.state
-        
+
         # expand new nodes
         not_connected_drones = [drone for drone in current_node.state.mission_drones if current_node.state.get_drone_coords(drone) not in current_node.state.connected_coords]
+
+
+        # found solution
+        if current_node.state.completed() or not_connected_drones == []: return current_node.state
+
+        
+
+        #print(not_connected_drones)
         for not_connected_drone in not_connected_drones:
             new_node = Node(current_node.state.deepcopy(), current_node, current_node.depth + 1)
             path = current_node.state.get_path(not_connected_drone, closest_poi)

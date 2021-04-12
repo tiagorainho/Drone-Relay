@@ -10,10 +10,10 @@ class Drone:
     Kd = 0.004      # compensar o overshoot do p
 
     DRONE_SAMPLE_TIME = 0.008
-    ERROR_THRESHOLD = 5
+    ERROR_THRESHOLD = 10
     MAX_RADIUS_CONNECTION = 50
-    RADIUS_CONNECTION_THRESHOLD = 40
-    OPTIMAL_DISTANCE_CONNECTION = 25
+    RADIUS_CONNECTION_THRESHOLD = 30
+    OPTIMAL_DISTANCE_CONNECTION = 20
 
     def __init__(self, coords, drone_type=None):
         self.initial_coords = coords
@@ -77,8 +77,8 @@ class Drone:
 
     def draw(self, pygame, screen):
         if self.coords != self.initial_coords or self.is_access_point:
-            if self.is_access_point: color = (255, 255, 0)
-            else: color = (0, 255, 0)
+            if self.is_access_point: color = (0, 255, 0)
+            else: color = (255, 255, 0)
             pygame.draw.circle(screen, color, (self.x, self.y), self.MAX_RADIUS_CONNECTION, width=1)
             if self.type == "relay": pygame.draw.circle(screen, (0, 150, 150), (self.x, self.y), (self.z+10)/5)
             else: pygame.draw.circle(screen, (200, 200, 200), (self.x, self.y), (self.z+10)/5)

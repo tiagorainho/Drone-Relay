@@ -2,20 +2,28 @@ from time import sleep, time
 from models.Utils import *
 from models.Search import astar_drone_relay_paths, drone_directions, DronesState
 from models.Drone import Drone
+import random
 
-NUM_DRONES = 16
+NUM_DRONES = 15
 NUM_RELAY_DRONES = 60
 
 def load_mission(drones):
     # drone 0 is the ground station
     #drones[0].is_access_point = True
-    #drones[15].is_access_point = True
+    #drones[1].is_access_point = True
     #drones[2].is_access_point = True
-    #drones[6].is_access_point = True
-    drones[12].is_access_point = True
+    drones[2].is_access_point = True
+    drones[6].is_access_point = True
+    #drones[12].is_access_point = True
+    '''
+    # automatic testing
+    while True:
+        for drone in drones:
+            drone.addTask("moveTo", (random.randrange(10, 790), random.randrange(10, 590), 10))
+        sleep(20)
+    '''
+    drones[0].addTask("moveTo", (400, 305, 10))
     
-    #drones[0].addTask("moveTo", (270, 310, 10))
-
     #drones[12].addTask("moveTo", (500, 300, 10))
 
     drones[1].addTask("moveTo", (250, 300, 10))
@@ -71,7 +79,7 @@ def load_mission(drones):
     drones[11].addTask("moveTo", (120, 220, 10))
 
     #drones[12].state == "ARMED"
-    #drones[12].addTask("moveTo", (240, 30, 10))
+    drones[12].addTask("moveTo", (240, 30, 10))
 
     sleep(1)
     drones[13].addTask("moveTo", (320, 550, 10))
@@ -134,7 +142,7 @@ def relay(mission_drones, relay_drones, shared_coords):
             shared_coords.add(coord)
         #
 
-        drones_state = astar_drone_relay_paths(start_state, poi)        
+        drones_state = astar_drone_relay_paths(start_state, poi)
 
         if drones_state is not None:
             relays_needed = list(drones_state.drones_relay)
