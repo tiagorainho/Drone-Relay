@@ -1,6 +1,7 @@
 from queue import PriorityQueue
 from models.Drone import *
 from models.Utils import coords_distance
+import itertools
 
 class Node:
     def __init__(self, state, parent, depth):
@@ -77,7 +78,7 @@ class DronesState:
                 distance_aux = coords_distance(last_poi, connected_coord)
                 if min_distance > distance_aux: min_distance = distance_aux
             distance += min_distance
-        return distance + self._previous_distance + len(self.drones_relay)
+        return distance + self._previous_distance + len(self.drones_relay)*1.5
 
     def update_state(self, drones_changed, drone_to_coords):
 
@@ -161,7 +162,7 @@ class DronesState:
         return None
 
     def __hash__(self):
-        return hash(frozenset(self._drones_connection))#*hash(frozenset(self._connected_coords))
+        return hash(frozenset(self._drones_connection))*hash(frozenset(self._connected_coords))
     
     def __str__(self):
         return str(self._drones_connection)
@@ -172,7 +173,6 @@ class DronesState:
     def deepcopy(self):
         return DronesState({key: value[:] for key, value in self._drones_connection.items()}, {value for value in self._connected_coords}, self._drone_to_coords)
 
-
 def astar_drone_relay_paths(drones_state: DronesState,  poi):
     # get closest drones for performance reasons
     poi_extended = poi+[coord for coord in drones_state.mission_drone_coords]
@@ -181,7 +181,7 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
         aux_list = []
         for p2 in poi_extended:
             distance = coords_distance(p1, p2)
-            if p1 != p2 and distance <= Drone.RADIUS_CONNECTION_THRESHOLD and distance >= 10: aux_list.append(p2)
+            if p1 != p2 and distance <= Drone.RADIUS_CONNECTION_THRESHOLD and distance >= Drone.MINIMAL_DISTANCE: aux_list.append(p2)
         closest_poi[p1] = aux_list
     
     # prepare for start astar search
@@ -197,11 +197,8 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
         # expand new nodes
         not_connected_drones = [drone for drone in current_node.state.mission_drones if current_node.state.get_drone_coords(drone) not in current_node.state.connected_coords]
 
-
         # found solution
         if current_node.state.completed() or not_connected_drones == []: return current_node.state
-
-        
 
         #print(not_connected_drones)
         for not_connected_drone in not_connected_drones:
@@ -216,6 +213,9 @@ def astar_drone_relay_paths(drones_state: DronesState,  poi):
     return None
 
 def drone_directions(relay_drones, relays_needed):
+
+    
+
     '''
     all_combinations = [list(zip(each_permutation, relays_needed)) for each_permutation in itertools.permutations(relay_drones, len(relays_needed))]
     if len(all_combinations) == 0: return None

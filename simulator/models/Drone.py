@@ -12,8 +12,9 @@ class Drone:
     DRONE_SAMPLE_TIME = 0.008
     ERROR_THRESHOLD = 10
     MAX_RADIUS_CONNECTION = 50
-    RADIUS_CONNECTION_THRESHOLD = 30
-    OPTIMAL_DISTANCE_CONNECTION = 20
+    RADIUS_CONNECTION_THRESHOLD = 40
+    OPTIMAL_DISTANCE_CONNECTION = 15
+    MINIMAL_DISTANCE = 10
 
     def __init__(self, coords, drone_type=None):
         self.initial_coords = coords

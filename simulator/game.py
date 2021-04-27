@@ -13,7 +13,7 @@ FPS = 30
 
 shared_coords = set()
 
-def draw_window(pygame, screen, drone_list):
+def draw_window(pygame, screen, drone_list, ground_stations):
     screen.fill((0,0,0))
     for drone in drone_list:
         drone.draw(pygame, screen)
@@ -32,6 +32,9 @@ def draw_window(pygame, screen, drone_list):
         for coord in shared_coords:
             pygame.draw.circle(screen, (255,0,0), (coord[0], coord[1]), 1)
 
+        for gs in ground_stations:
+            pygame.draw.circle(screen, (0,255,0), (gs[0], gs[1]), 5)
+
     pygame.display.update()
 
 def main():
@@ -43,13 +46,15 @@ def main():
     # create drones
     drone_list = [Drone((WIDTH/2, HEIGHT/2, 0)) for _ in range(NUM_DRONES)]
     relay_list = [Drone((WIDTH/2, HEIGHT/2, 0), "relay") for _ in range(NUM_RELAY_DRONES)]
+    ground_stations = []
 
     # add missions
-    missions = threading.Thread(target=load_mission, args=(drone_list,), daemon=True)
+    missions = threading.Thread(target=load_mission, args=(drone_list, ground_stations), daemon=True)
     missions.start()
 
     # activate relay
-    relay_algorithm = threading.Thread(target=relay, args=(drone_list, relay_list, shared_coords), daemon=True)
+    # shared_coords are for showing the red coords (poi)
+    relay_algorithm = threading.Thread(target=relay, args=(drone_list, relay_list, ground_stations, shared_coords), daemon=True)
     relay_algorithm.start()
 
     # run simulation
@@ -59,7 +64,7 @@ def main():
             if event.type == pygame.QUIT:
                 simulation_running = False
                 pygame.quit()
-        draw_window(pygame, screen, drone_list+relay_list)
+        draw_window(pygame, screen, drone_list+relay_list, ground_stations)
 
 if __name__ == "__main__":
     main()

@@ -5,22 +5,27 @@ from models.Drone import Drone
 import random
 
 NUM_DRONES = 15
-NUM_RELAY_DRONES = 60
+NUM_RELAY_DRONES = 40
 
-def load_mission(drones):
-    # drone 0 is the ground station
-    #drones[0].is_access_point = True
-    #drones[1].is_access_point = True
-    #drones[2].is_access_point = True
+def load_mission(drones, ground_stations):
+    # add ground_station
+    ground_stations.append((400, 305, 10))
+
+    '''
+    drones[0].is_access_point = True
+    
+    drones[1].is_access_point = True
     drones[2].is_access_point = True
     drones[6].is_access_point = True
-    #drones[12].is_access_point = True
+    drones[12].is_access_point = True
+    drones[9].is_access_point = True
+    '''
     '''
     # automatic testing
     while True:
         for drone in drones:
-            drone.addTask("moveTo", (random.randrange(10, 790), random.randrange(10, 590), 10))
-        sleep(20)
+            drone.addTask("moveTo", (random.randrange(10, 790), random.randrange(10, 590), random.randrange(5, 20)))
+        sleep(2000)
     '''
     drones[0].addTask("moveTo", (400, 305, 10))
     
@@ -36,7 +41,7 @@ def load_mission(drones):
     drones[2].addTask("moveTo", (280, 350, 10))
     drones[2].connectedTo(drones[0])
     
-    sleep(5)
+    sleep(3)
     drones[3].addTask("moveTo", (410, 320, 10))
     drones[3].connectedTo(drones[0])
     
@@ -44,11 +49,11 @@ def load_mission(drones):
     drones[3].addTask("moveTo", (300, 350, 10))
     drones[2].addTask("moveTo", (400, 290, 10))
 
-    sleep(4)
+    sleep(3)
     drones[2].addTask("moveTo", (300, 350, 10))
     drones[3].addTask("moveTo", (400, 290, 10))
 
-    sleep(4)
+    sleep(3)
     drones[1].addTask("moveTo", (400, 390, 10))
     drones[3].addTask("moveTo", (200, 400, 10))
     
@@ -89,8 +94,7 @@ def load_mission(drones):
     #
 
 
-def relay(mission_drones, relay_drones, shared_coords):
-
+def relay(mission_drones, relay_drones, ground_stations, shared_coords):
     drone_to_coords = dict()
     update_counter = 0
     refresh_state = True
@@ -111,36 +115,32 @@ def relay(mission_drones, relay_drones, shared_coords):
         start_time = time()
 
         # get current access points
-        gs = [drone for drone in mission_drones if drone.is_access_point]
+        connected_coords = [drone for drone in mission_drones if drone.is_access_point] # gs
 
-        # get points of interess
-        #poi = get_poi([mission_drone for mission_drone in mission_drones if mission_drone.state != "OFFLINE" or mission_drone.is_access_point], gs, drone_to_coords)
-        
-        '''
-        if refresh_state:
-            # update drones relay position
-            drones_connection = {drone: [] for drone in mission_drones if drone.state != "OFFLINE" or drone.is_access_point}
-            connected_coords = {coords for drone, coords in drone_to_coords.items() if drone.is_access_point}
-            start_state = DronesState(drones_connection, connected_coords, drone_to_coords)
-            refresh_state = False
-        else:
-            start_state = start_state.update_state(changed_drones, drone_to_coords)
-        '''
+
         drones_connection = {drone: [] for drone in mission_drones if drone.state != "OFFLINE" or drone.is_access_point}
-        connected_coords = {drone_to_coords[drone] for drone in gs}
+
+        #
+        connected_coords = {drone_to_coords[drone] for drone in connected_coords}
+        for gs in ground_stations: connected_coords.add(gs)
+
         #connected_coords = {coords for drone, coords in drone_to_coords.items() if drone.is_access_point}
         start_state = DronesState(drones_connection, connected_coords, drone_to_coords)
 
         # get points of interess
-        poi = get_poi([drone for drone in drones_connection.keys() if drone.state != "OFFLINE" or drone.is_access_point], gs, drone_to_coords)
+        poi = get_poi([drone.coords for drone in drones_connection.keys() if drone.state != "OFFLINE" and not drone.is_access_point], list(connected_coords), drone_to_coords)
         
-        #
+
+        # eliminate points too close // confirm if really needed  // NOT good performant
+        #print(len(poi))
+        #poi = average_close_points(poi)
+        #print(len(poi))
+
         for _ in range(len(shared_coords)):
             shared_coords.pop()
 
         for coord in poi:
             shared_coords.add(coord)
-        #
 
         drones_state = astar_drone_relay_paths(start_state, poi)
 
@@ -163,36 +163,33 @@ def relay(mission_drones, relay_drones, shared_coords):
             print("falhou counter: " + str(update_counter) + "; time: " + str(time()-start_time) + " seconds")
         update_counter += 1
 
-def get_poi(drones, ground_stations, drone_to_coords):
+def get_poi(not_connected_coords, connected_coords, drone_to_coords):
     # points leading to closest ground station or blob of drones
-
     poi = set()
-    for drone in drones:
-        gs = ground_stations[0]
-        drone_coords = drone_to_coords[drone]
-        closest_gs = coords_distance(drone_coords, drone_to_coords[gs])
+    for drone_coords in not_connected_coords:
 
-        # get closest ground station
-        for gs_aux in ground_stations:
-            distance = coords_distance(drone_coords, drone_to_coords[gs_aux])
-            if distance < closest_gs:
-                gs = gs_aux
-                closest_gs = distance
+        # get closest connected coord
+        closest_coord = connected_coords[0]
+        closest_distance = coords_distance(drone_coords, closest_coord)
+        for cc_aux in connected_coords:
+            distance = coords_distance(drone_coords, cc_aux)
+            if distance < closest_distance:
+                closest_coord = cc_aux
+                closest_distance = distance
 
         # get points to closest ground station
-        if closest_gs > Drone.OPTIMAL_DISTANCE_CONNECTION:
-            gs_coords = drone_to_coords[gs]
+        if closest_distance > Drone.OPTIMAL_DISTANCE_CONNECTION:
+            gs_coords = closest_coord
             vector = (gs_coords[0]-drone_coords[0], gs_coords[1]-drone_coords[1], gs_coords[2]-drone_coords[2])
-            fragmentation = closest_gs/Drone.OPTIMAL_DISTANCE_CONNECTION
+            fragmentation = closest_distance/Drone.OPTIMAL_DISTANCE_CONNECTION
             for i in range(1, int(fragmentation)+1):
                 poi.add((gs_coords[0]-vector[0]*i/fragmentation, gs_coords[1]-vector[1]*i/fragmentation, gs_coords[2]-vector[2]*i/fragmentation))
         
         # get points to closest mission drone
-        for drone2 in drones:
-            if drone != drone2:
-                drone2_coords = drone_to_coords[drone2]
+        for drone2_coords in not_connected_coords:
+            if drone_coords != drone2_coords:
                 distance = coords_distance(drone_coords, drone2_coords)
-                if distance < closest_gs and distance > Drone.OPTIMAL_DISTANCE_CONNECTION:
+                if distance < closest_distance and distance > Drone.OPTIMAL_DISTANCE_CONNECTION:
                     vector = (drone_coords[0]-drone2_coords[0], drone_coords[1]-drone2_coords[1], drone_coords[2]-drone2_coords[2])
                     fragmentation = distance/(Drone.OPTIMAL_DISTANCE_CONNECTION)
                     for i in range(1, int(fragmentation)+1):
@@ -211,3 +208,15 @@ def optimize_relays(relays_needed, mission_drones):
                     relays_needed.remove(relay2)
                     return optimize_relays(relays_needed, mission_drones)
     return relays_needed
+
+def average_close_points(poi):
+    for p1 in poi:
+        for p2 in poi:
+            if p1 == p2: continue
+            if coords_distance(p1, p2) <= 5:
+                poi.remove(p1)
+                poi.remove(p2)
+                coord = ((p1[0]+p2[0])/2, (p1[1]+p2[1])/2, (p1[2]+p2[2])/2)
+                poi.append(coord)
+                return average_close_points(poi)
+    return poi
