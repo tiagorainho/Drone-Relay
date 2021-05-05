@@ -45,7 +45,8 @@ table td, table th {
 }
 table thead tr {
   height: 60px;
-  background: linear-gradient(to right, hsl(210, 30%, 20%), hsl(255, 30%, 25%));
+  /*background: linear-gradient(to right, hsl(210, 30%, 20%), hsl(255, 30%, 25%)); */
+  background: #4458CE
 }
 table tbody tr {
   height: 50px;
@@ -69,7 +70,7 @@ table td.r, table th.r {
 .table-head th{
   font-family: OpenSans-Regular;
   font-size: 18px;
-  color: #b1b0b0;
+  color: white;
   line-height: 1.2;
   font-weight: unset;
 }
@@ -78,7 +79,7 @@ tbody tr {
   font-family: OpenSans-Regular;
   font-size: 15px;
   color: #b1b0b0;
-  line-height: 1.2;
+  line-height: 1.5;
   font-weight: unset;
   background: linear-gradient(to right, hsl(210, 30%, 20%), hsl(255, 30%, 25%));;
 }
@@ -92,41 +93,24 @@ tbody tr a:hover {
   color: #fdfdfd;
 }
 
-tbody tr:hover {
-  color: #fdfdfd;
-  opacity: 0.9;
-}
-
-.column1 {
-  width: 400px;
+.first-col {
   padding-left: 40px;
 }
 
-.column2 {
-  width: 150px;
-}
-
-.column3 {
-  width: 150px; 
+.last-col {
   padding-right: 40px;
 }
 
-.column4 {
-  width: 110px;
-  text-align: right;
+table tbody tr td div a{
+  cursor:pointer;
+}
+table tbody tr td div .information, table tbody tr td div .title {
+  display:none;
 }
 
-.column5 {
-  width: 170px;
-  text-align: right;
+table tbody .tr-divide-4 td {
+  column-count: 4;
 }
-
-.column6 {
-  width: 222px;
-  text-align: right;
-  padding-right: 62px;
-}
-
 
 @media screen and (max-width: 800px) {
 
@@ -165,15 +149,6 @@ tbody tr:hover {
     width: 40%;
     left: 30px;
     top: 0;
-  }
-  table tbody tr td:nth-child(1):before {
-    content: "Deliverable";
-  }
-  table tbody tr td:nth-child(2):before {
-    content: "Version";
-  }
-  table tbody tr td:nth-child(3):before {
-    content: "Date";
   }
 
   .column4,
