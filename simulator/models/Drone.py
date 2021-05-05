@@ -5,13 +5,16 @@ from models.Sensors import Wifi
 import math
 
 class Drone:
-    Kp = 0.015      # quao longe estamos do destino
+    Kp = 0.04      # quao longe estamos do destino
     Ki = 0.0001     # aproximar do valor verdaeiro
     Kd = 0.004      # compensar o overshoot do p
 
     DRONE_SAMPLE_TIME = 0.008
-    ERROR_THRESHOLD = 2
+    ERROR_THRESHOLD = 10
     MAX_RADIUS_CONNECTION = 50
+    RADIUS_CONNECTION_THRESHOLD = 40
+    OPTIMAL_DISTANCE_CONNECTION = 15
+    MINIMAL_DISTANCE = 10
 
     def __init__(self, coords, drone_type=None):
         self.initial_coords = coords
@@ -35,8 +38,6 @@ class Drone:
         elif func == 'returnBase':
             self.startTask(self.moveTo, self.initial_coords)
             self.state == "OFFLINE"
-            #self.startTask(self.moveTo, (self.initial_coords[0], self.initial_coords[1], 0))
-
 
     def startTask(self, func, args):
         if self.task != None:
@@ -46,13 +47,14 @@ class Drone:
         self.task.start()
 
     def moveTo(self, x, y, z):
-        self.pid_x.setpoint = x
-        self.pid_y.setpoint = y
-        self.pid_z.setpoint = z
+        self.pid_x.setpoint, self.pid_y.setpoint, self.pid_z.setpoint = (x,y,z)
         while(not self.task.exited()):
             len_x, len_y, len_z = (self.pid_x(self.x), self.pid_y(self.y), self.pid_z(self.z))
             size = math.sqrt(len_x**2 + len_y**2 + len_z**2)
-            if size == 0: break
+            if size == 0:
+                self.x, self.y, self.z = (x, y, z)
+                self.task = None
+                break
             self.x += len_x/size
             self.y += len_y/size
             self.z += len_z/size
@@ -76,8 +78,8 @@ class Drone:
 
     def draw(self, pygame, screen):
         if self.coords != self.initial_coords or self.is_access_point:
-            if self.is_access_point: color = (255, 255, 0)
-            else: color = (0, 255, 0)
+            if self.is_access_point: color = (0, 255, 0)
+            else: color = (255, 255, 0)
             pygame.draw.circle(screen, color, (self.x, self.y), self.MAX_RADIUS_CONNECTION, width=1)
             if self.type == "relay": pygame.draw.circle(screen, (0, 150, 150), (self.x, self.y), (self.z+10)/5)
             else: pygame.draw.circle(screen, (200, 200, 200), (self.x, self.y), (self.z+10)/5)
@@ -86,4 +88,4 @@ class Drone:
         return math.sqrt((self.x-drone.x)**2 + (self.y-drone.y)**2 + (self.z-drone.z)**2)
 
     def __str__(self):
-        return str(self.coords)
+        return "Drone: " + str(self.coords)
